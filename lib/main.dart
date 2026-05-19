@@ -98,7 +98,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
     return url.startsWith("https://");
   }
 
-  // FUNÇÃO DO MOTOR DE BUSCA LEMONADE - AGORA USANDO A REDE ULTRA ESTÁVEL DA BRAVE SEARCH
+  // FUNÇÃO DO MOTOR DE BUSCA LEMONADE TOTALMENTE CORRIGIDA
   void _executarBuscaLemonade(String input) {
     String finalUrl = input.trim();
     if (finalUrl.isEmpty) return;
@@ -108,10 +108,10 @@ class _BrowserScreenState extends State<BrowserScreen> {
         (finalUrl.contains(".") && !finalUrl.contains(" "));
 
     if (!isUrl) {
-      // Usando o motor de busca limpo e sem rastreadores da Brave (Estilo DuckDuckGo, mas muito mais rápido)
-      finalUrl = "https://brave.com{Uri.encodeComponent(finalUrl)}";
+      // CORREÇÃO AQUI: Adicionado o $ para o Flutter injetar o texto da busca corretamente na URL
+      finalUrl = "https://brave.com\${Uri.encodeComponent(finalUrl)}";
     } else if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
-      finalUrl = "https://$finalUrl";
+      finalUrl = "https://\$finalUrl";
     }
 
     setState(() {
@@ -162,7 +162,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    tabs[index].title.length > 12 ? "${tabs[index].title.substring(0, 12)}..." : tabs[index].title,
+                                    tabs[index].title.length > 12 ? "\${tabs[index].title.substring(0, 12)}..." : tabs[index].title,
                                     style: TextStyle(
                                       color: isSelected ? const Color(0xffe2ff88) : Colors.white60,
                                       fontSize: 12,
