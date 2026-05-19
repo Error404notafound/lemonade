@@ -35,7 +35,7 @@ jobs:
         # Apaga a pasta nativa antiga
         rm -rf android
         
-        # Cria o projeto de forma limpa e perfeita
+        # Cria o projeto de forma limpa
         flutter create . --org com.error404notafound --project-name lemonade
         
         # Restaura seus arquivos principais intactos
@@ -46,19 +46,31 @@ jobs:
         echo "android.useAndroidX=true" >> android/gradle.properties
         echo "android.enableJetifier=true" >> android/gradle.properties
 
-    - name: Configurar Forcado para Android 5.0+ e Injetar Permissoes
+    - name: Corrigir Conflito de Kotlin, Android 5.0+ e Permissoes via Python
       run: |
-        # Usamos Python para ajustar a versao minima exigida pelo Firebase e injetar o Cleartext
         python3 -c "
         # 1. Ajusta o minSdkVersion para 21
         build_gradle_path = 'android/app/build.gradle'
         with open(build_gradle_path, 'r') as f:
             bg_content = f.read()
         bg_content = bg_content.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 21')
+        
+        # 2. Resolve classes duplicadas do Kotlin forgando o alinhamento de modulos
+        kotlin_fix = '''
+        configurations.all {
+            resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.jetbrains.kotlin') {
+                    details.useVersion '1.8.22'
+                }
+            }
+        }
+        '''
+        bg_content = bg_content + '\n' + kotlin_fix
+        
         with open(build_gradle_path, 'w') as f:
             f.write(bg_content)
 
-        # 2. Injeta a regra que aceita sites HTTP antigos
+        # 3. Injeta a regra que aceita sites HTTP antigos
         manifest_path = 'android/app/src/main/AndroidManifest.xml'
         with open(manifest_path, 'r') as f:
             m_content = f.read()
