@@ -1,0 +1,20 @@
+<manifest xmlns:android="http://android.com"
+    package="com.error404notafound.lemonade">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application
+        android:label="Lemonade"
+        android:name="${applicationName}">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
