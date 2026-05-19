@@ -7,16 +7,18 @@ void main() async {
   
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: "SUA_API_KEY_AQUI", 
+      apiKey: "AIzaSyA8l1HEX06pz732OkS0ao79RU9wpsUjRuE", // Sua chave real inserida aqui!
       appId: "1:763178048678:android:5702a131240233a18ee867",
       messagingSenderId: "763178048678",
       projectId: "lemonade-aa1f0",
+      storageBucket: "lemonade-aa1f0.firebasestorage.app",
     ),
   );
 
   InAppWebViewController.setWebContentsDebuggingEnabled(true);
   runApp(const LemonadeApp());
 }
+
 
 class LemonadeApp extends StatelessWidget {
   const LemonadeApp({super.key});
