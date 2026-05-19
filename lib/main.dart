@@ -5,17 +5,15 @@ import 'package:firebase_core/firebase_core.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializa o Firebase Web/Mobile sem precisar do arquivo google-services.json
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: "SUA_API_KEY_AQUI", // Encontre no painel do Firebase se necessário
+      apiKey: "SUA_API_KEY_AQUI", 
       appId: "1:763178048678:android:5702a131240233a18ee867",
       messagingSenderId: "763178048678",
       projectId: "lemonade-aa1f0",
     ),
   );
 
-  // Ativa a depuração interna do sistema
   InAppWebViewController.setWebContentsDebuggingEnabled(true);
   runApp(const LemonadeApp());
 }
@@ -37,14 +35,22 @@ class BrowserScreen extends StatefulWidget {
   const BrowserScreen({super.key});
 
   @override
-  State<BrowserScreen> createState() => _BrowserScreenState();
+  Widget build(BuildContext context) {
+    return const BrowserView();
+  }
 }
 
-class _BrowserScreenState extends State<BrowserScreen> {
+class BrowserView extends StatefulWidget {
+  const BrowserView({super.key});
+
+  @override
+  State<BrowserView> createState() => _BrowserViewState();
+}
+
+class _BrowserViewState extends State<BrowserView> {
   InAppWebViewController? webViewController;
   final TextEditingController urlController = TextEditingController(text: "https://google.com");
 
-  // Injeta o Console de Desenvolvedor Eruda (Estilo Kiwi Browser)
   void _injectDevTools() {
     webViewController?.evaluateJavascript(source: """
       (function () {
@@ -70,16 +76,26 @@ class _BrowserScreenState extends State<BrowserScreen> {
             border: InputBorder.none,
           ),
           onSubmitted: (value) {
-            var url = WebUri(value);
-            if (!value.startsWith("http")) {
-              url = WebUri("https://google.com");
+            String trimmed = value.trim();
+            if (trimmed.isEmpty) return;
+
+            WebUri url;
+            // Se tiver cara de link (ex: site.com, http://, https://)
+            if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+              url = WebUri(trimmed);
+            } else if (trimmed.contains(".") && !trimmed.contains(" ")) {
+              url = WebUri("https://$trimmed");
+            } else {
+              // Se for apenas texto, vira uma pesquisa automática no Google
+              url = WebUri("https://google.com{Uri.encodeComponent(trimmed)}");
             }
+            
             webViewController?.loadUrl(urlRequest: URLRequest(url: url));
           },
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.code), // Botão para abrir o DevTools na tela
+            icon: const Icon(Icons.code),
             tooltip: "DevTools",
             onPressed: _injectDevTools,
           ),
@@ -97,12 +113,10 @@ class _BrowserScreenState extends State<BrowserScreen> {
         initialSettings: InAppWebViewSettings(
           allowUniversalAccessFromFileURLs: true,
           allowFileAccessFromFileURLs: true,
-          // Abre qualquer site antigo/inseguro sem travar (Estilo Firefox)
           mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
           javaScriptEnabled: true,
           domStorageEnabled: true,
         ),
-        // Ignora erros de SSL expirado ou inválido de sites antigos
         onReceivedServerTrustAuthRequest: (controller, challenge) async {
           return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
         },
