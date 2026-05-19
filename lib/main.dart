@@ -98,29 +98,38 @@ class _BrowserScreenState extends State<BrowserScreen> {
     return url.startsWith("https://");
   }
 
-  // FUNÇÃO DO MOTOR DE BUSCA CORRIGIDA COM SINAL DE MAIS (+) PARA NÃO DAR ERRO
+  // FUNÇÃO DO MOTOR DE BUSCA BRINDADA CONTRA ERROS DE URL
   void _executarBuscaLemonade(String input) {
-    String finalUrl = input.trim();
-    if (finalUrl.isEmpty) return;
+    String termo = input.trim();
+    if (termo.isEmpty) return;
 
-    bool isUrl = finalUrl.startsWith("http://") ||
-        finalUrl.startsWith("https://") ||
-        (finalUrl.contains(".") && !finalUrl.contains(" "));
+    String urlFinal = "";
+
+    // Identifica se é um site válido ou se é apenas um texto para pesquisar
+    bool isUrl = termo.startsWith("http://") ||
+        termo.startsWith("https://") ||
+        (termo.contains(".") && !termo.contains(" "));
 
     if (!isUrl) {
-      // Mudado de Brave para DuckDuckGo Oficial usando soma de textos simples (+)
-      finalUrl = "https://duckduckgo.com" + Uri.encodeComponent(finalUrl);
-    } else if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
-      finalUrl = "https://" + finalUrl;
+      // Montagem automática oficial do Flutter para a busca privada do DuckDuckGo
+      final uriMontada = Uri.https("duckduckgo.com", "/", {"q": termo});
+      urlFinal = uriMontada.toString();
+    } else {
+      if (!termo.startsWith("http://") && !termo.startsWith("https://")) {
+        urlFinal = "https://" + termo;
+      } else {
+        urlFinal = termo;
+      }
     }
 
     setState(() {
-      currentTab.url = finalUrl;
+      currentTab.url = urlFinal;
       currentTab.showHomePage = false; 
-      urlController.text = finalUrl;
+      urlController.text = urlFinal;
     });
 
-    currentTab.controller?.loadUrl(urlRequest: URLRequest(url: WebUri(finalUrl)));
+    // Envia o link correto montado pelo sistema para a tela do app
+    currentTab.controller?.loadUrl(urlRequest: URLRequest(url: WebUri(urlFinal)));
   }
 
   @override
