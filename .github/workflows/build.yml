@@ -27,35 +27,33 @@ jobs:
 
     - name: Restaurar e Corrigir Estrutura Nativa (Garante Bolinha Verde)
       run: |
-        # Cria backups de seguranca
         mkdir -p backup_lemonade
         cp lib/main.dart backup_lemonade/
         cp pubspec.yaml backup_lemonade/
         
-        # Apaga a pasta nativa antiga
         rm -rf android
-        
-        # Cria o projeto de forma limpa
         flutter create . --org com.error404notafound --project-name lemonade
         
-        # Restaura seus arquivos principais intactos
         cp backup_lemonade/main.dart lib/
         cp backup_lemonade/pubspec.yaml ./
         
-        # Ativa o AndroidX
         echo "android.useAndroidX=true" >> android/gradle.properties
         echo "android.enableJetifier=true" >> android/gradle.properties
+
+    - name: Baixar a Imagem do Limao e Configurar Pastas
+      run: |
+        mkdir -p assets/icon
+        # Baixa a foto direto do link que você enviou
+        curl -L "https://image.cdn2.seaart.me/2026-05-19/d85uilte878c73f6v4f0/982a163c-9dfe-4dde-9246-3604087cd159.png" -o assets/icon/logo.png
 
     - name: Corrigir Conflito de Kotlin, Android 5.0+ e Permissoes via Python
       run: |
         python3 -c "
-        # 1. Ajusta o minSdkVersion para 21
         build_gradle_path = 'android/app/build.gradle'
         with open(build_gradle_path, 'r') as f:
             bg_content = f.read()
         bg_content = bg_content.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 21')
         
-        # 2. Resolve classes duplicadas do Kotlin forgando o alinhamento de modulos
         kotlin_fix = '''
         configurations.all {
             resolutionStrategy.eachDependency { DependencyResolveDetails details ->
@@ -70,7 +68,6 @@ jobs:
         with open(build_gradle_path, 'w') as f:
             f.write(bg_content)
 
-        # 3. Injeta a regra que aceita sites HTTP antigos
         manifest_path = 'android/app/src/main/AndroidManifest.xml'
         with open(manifest_path, 'r') as f:
             m_content = f.read()
@@ -82,6 +79,9 @@ jobs:
 
     - name: Baixar as dependencias do app
       run: flutter pub get
+
+    - name: Gerar os Icones Customizados com o Limao
+      run: flutter pub run flutter_launcher_icons
 
     - name: Criar o arquivo APK Final
       run: flutter build apk --debug
