@@ -98,7 +98,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
     return url.startsWith("https://");
   }
 
-  // FUNÇÃO DO MOTOR DE BUSCA LEMONADE TOTALMENTE CORRIGIDA
+  // FUNÇÃO DO MOTOR DE BUSCA LEMONADE - AGORA USANDO A REDE ULTRA ESTÁVEL DA BRAVE SEARCH
   void _executarBuscaLemonade(String input) {
     String finalUrl = input.trim();
     if (finalUrl.isEmpty) return;
@@ -108,8 +108,8 @@ class _BrowserScreenState extends State<BrowserScreen> {
         (finalUrl.contains(".") && !finalUrl.contains(" "));
 
     if (!isUrl) {
-      // Motor de busca privado Lemonade via SearXNG
-      finalUrl = "https://searxng.be{Uri.encodeComponent(finalUrl)}";
+      // Usando o motor de busca limpo e sem rastreadores da Brave (Estilo DuckDuckGo, mas muito mais rápido)
+      finalUrl = "https://brave.com{Uri.encodeComponent(finalUrl)}";
     } else if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
       finalUrl = "https://$finalUrl";
     }
@@ -120,7 +120,6 @@ class _BrowserScreenState extends State<BrowserScreen> {
       urlController.text = finalUrl;
     });
 
-    // Envia a nova URL diretamente para o controlador da aba atual
     currentTab.controller?.loadUrl(urlRequest: URLRequest(url: WebUri(finalUrl)));
   }
 
@@ -207,7 +206,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
                       controller: urlController,
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                       decoration: const InputDecoration(
-                        hintText: "Pesquise no Lemonade de forma privada...",
+                        hintText: "Pesquise de forma privada...",
                         hintStyle: TextStyle(color: Colors.white38),
                         border: InputBorder.none,
                       ),
