@@ -19,10 +19,16 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Configurar o Flutter
+    - name: Configurar o Flutter Compativel
       uses: subosito/flutter-action@v2
       with:
+        flutter-version: '3.19.6' # Força uma versão que casa perfeitamente com seu Gradle
         channel: 'stable'
+
+    - name: Ativar AndroidX no projeto
+      run: |
+        echo "android.useAndroidX=true" >> android/gradle.properties
+        echo "android.enableJetifier=true" >> android/gradle.properties
 
     - name: Baixar as dependencias do app
       run: flutter pub get
