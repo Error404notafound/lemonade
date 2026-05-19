@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "763178048678",
+    "project_id": "lemonade-aa1f0",
+    "storage_bucket": "lemonade-aa1f0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763178048678:android:5702a131240233a18ee867",
+        "android_client_info": {
+          "package_name": "com.error404notafound.lemonade"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8l1HEX06pz732OkS0ao79RU9wpsUjRuE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
