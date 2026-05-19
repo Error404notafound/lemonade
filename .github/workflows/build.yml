@@ -32,10 +32,10 @@ jobs:
         cp lib/main.dart backup_lemonade/
         cp pubspec.yaml backup_lemonade/
         
-        # Apaga a pasta nativa antiga antiga
+        # Apaga a pasta nativa antiga
         rm -rf android
         
-        # Cria o projeto de forma limpa e perfeita usando o proprio Flutter
+        # Cria o projeto de forma limpa e perfeita
         flutter create . --org com.error404notafound --project-name lemonade
         
         # Restaura seus arquivos principais intactos
@@ -46,20 +46,26 @@ jobs:
         echo "android.useAndroidX=true" >> android/gradle.properties
         echo "android.enableJetifier=true" >> android/gradle.properties
 
-    - name: Injetar Permissao de Sites Antigos via Script Seguro
+    - name: Configurar Forcado para Android 5.0+ e Injetar Permissoes
       run: |
-        # Usamos Python para modificar o XML original criado pelo Flutter sem corromper nenhuma tag
+        # Usamos Python para ajustar a versao minima exigida pelo Firebase e injetar o Cleartext
         python3 -c "
-        path = 'android/app/src/main/AndroidManifest.xml'
-        with open(path, 'r') as f:
-            content = f.read()
-        
-        # Injeta a regra que aceita sites HTTP sem destruir os atributos nativos
-        if 'android:usesCleartextTraffic' not in content:
-            content = content.replace('<application', '<application android:usesCleartextTraffic=\"true\"')
-            
-        with open(path, 'w') as f:
-            f.write(content)
+        # 1. Ajusta o minSdkVersion para 21
+        build_gradle_path = 'android/app/build.gradle'
+        with open(build_gradle_path, 'r') as f:
+            bg_content = f.read()
+        bg_content = bg_content.replace('minSdkVersion flutter.minSdkVersion', 'minSdkVersion 21')
+        with open(build_gradle_path, 'w') as f:
+            f.write(bg_content)
+
+        # 2. Injeta a regra que aceita sites HTTP antigos
+        manifest_path = 'android/app/src/main/AndroidManifest.xml'
+        with open(manifest_path, 'r') as f:
+            m_content = f.read()
+        if 'android:usesCleartextTraffic' not in m_content:
+            m_content = m_content.replace('<application', '<application android:usesCleartextTraffic=\"true\"')
+        with open(manifest_path, 'w') as f:
+            f.write(m_content)
         "
 
     - name: Baixar as dependencias do app
