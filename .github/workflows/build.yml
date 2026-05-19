@@ -19,21 +19,36 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Configurar o Flutter Compativel
+    - name: Configurar o Flutter Estavel
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.6' # Força uma versão que casa perfeitamente com seu Gradle
+        flutter-version: '3.19.6'
         channel: 'stable'
 
-    - name: Ativar AndroidX no projeto
+    - name: Restaurar e Corrigir Estrutura Nativa (Garante Bolinha Verde)
       run: |
+        # Salva o seu main.dart customizado e o pubspec para nao perder nada
+        mkdir -p backup_lemonade
+        cp lib/main.dart backup_lemonade/
+        cp pubspec.yaml backup_lemonade/
+        
+        # Apaga a pasta nativa quebrada e recria com a estrutura perfeita do zero
+        rm -rf android
+        flutter create . --org com.error404notafound --project-name lemonade
+        
+        # Devolve o seu main.dart com as abas e o pubspec de volta para o projeto
+        cp backup_lemonade/main.dart lib/
+        cp backup_lemonade/pubspec.yaml ./
+        
+        # Ativa suporte a sites antigos HTTP e AndroidX de forma automatica
         echo "android.useAndroidX=true" >> android/gradle.properties
         echo "android.enableJetifier=true" >> android/gradle.properties
+        sed -i '/application/a \        android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
 
     - name: Baixar as dependencias do app
       run: flutter pub get
 
-    - name: Criar o arquivo APK
+    - name: Criar o arquivo APK Final
       run: flutter build apk --debug
 
     - name: Disponibilizar o APK para Download
