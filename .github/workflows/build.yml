@@ -32,13 +32,13 @@ jobs:
         cp lib/main.dart backup_lemonade/
         cp pubspec.yaml backup_lemonade/
         
-        # Apaga a pasta nativa antiga
+        # Apaga a pasta nativa antiga antiga
         rm -rf android
         
-        # Cria o projeto de forma limpa
+        # Cria o projeto de forma limpa e perfeita usando o proprio Flutter
         flutter create . --org com.error404notafound --project-name lemonade
         
-        # Restaura seus arquivos principais
+        # Restaura seus arquivos principais intactos
         cp backup_lemonade/main.dart lib/
         cp backup_lemonade/pubspec.yaml ./
         
@@ -46,42 +46,21 @@ jobs:
         echo "android.useAndroidX=true" >> android/gradle.properties
         echo "android.enableJetifier=true" >> android/gradle.properties
 
-    - name: Injetar Permissao de Sites Antigos de Forma Segura
+    - name: Injetar Permissao de Sites Antigos via Script Seguro
       run: |
-        # O uso de "EOF" entre aspas evita que o Linux apague os atributos do Android
-        cat << "EOF" > android/app/src/main/AndroidManifest.xml
-        <manifest xmlns:android="http://android.com"
-            package="com.error404notafound.lemonade">
+        # Usamos Python para modificar o XML original criado pelo Flutter sem corromper nenhuma tag
+        python3 -c "
+        path = 'android/app/src/main/AndroidManifest.xml'
+        with open(path, 'r') as f:
+            content = f.read()
+        
+        # Injeta a regra que aceita sites HTTP sem destruir os atributos nativos
+        if 'android:usesCleartextTraffic' not in content:
+            content = content.replace('<application', '<application android:usesCleartextTraffic=\"true\"')
             
-            <uses-permission android:name="android.permission.INTERNET"/>
-            
-            <application
-                android:label="Lemonade"
-                android:name="${applicationName}"
-                android:icon="@mipmap/ic_launcher"
-                android:usesCleartextTraffic="true">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true"
-                    android:launchMode="singleTop"
-                    android:theme="@style/LaunchTheme"
-                    android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|density|uiMode"
-                    android:hardwareAccelerated="true"
-                    android:windowSoftInputMode="adjustResize">
-                    <meta-data
-                        android:name="io.flutter.embedding.android.NormalTheme"
-                        android:resource="@style/NormalTheme" />
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN"/>
-                        <category android:name="android.intent.category.LAUNCHER"/>
-                    </intent-filter>
-                </activity>
-                <meta-data
-                    android:name="flutterEmbedding"
-                    android:value="2" />
-            </application>
-        </manifest>
-        EOF
+        with open(path, 'w') as f:
+            f.write(content)
+        "
 
     - name: Baixar as dependencias do app
       run: flutter pub get
