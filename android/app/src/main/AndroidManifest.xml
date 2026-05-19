@@ -7,7 +7,10 @@
         android:label="Lemonade"
         android:name="${applicationName}"
         android:hardwareAccelerated="true"
-        android:usesCleartextTraffic="true"> <!-- ESSA LINHA PERMITE SITES ANTIGOS HTTP -->
+        android:usesCleartextTraffic="true"> <!-- Permite sites antigos HTTP -->
+
+        <!-- ESTA LINHA ABAIXO RESOLVE O ERRO DE EMBEDDING V1 -->
+        <meta-data android:name="flutterEmbedding" android:value="2" />
 
         <activity
             android:name=".MainActivity"
