@@ -1,0 +1,37 @@
+name: Build Lemonade APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Baixar o codigo do repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar o Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Configurar o Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+
+    - name: Baixar as dependencias do app
+      run: flutter pub get
+
+    - name: Criar o arquivo APK
+      run: flutter build apk --debug
+
+    - name: Disponibilizar o APK para Download
+      uses: actions/upload-artifact@v4
+      with:
+        name: lemonade-app-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
