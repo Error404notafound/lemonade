@@ -27,23 +27,59 @@ jobs:
 
     - name: Restaurar e Corrigir Estrutura Nativa (Garante Bolinha Verde)
       run: |
-        # Salva o seu main.dart customizado e o pubspec para nao perder nada
+        # Cria backups de seguranca
         mkdir -p backup_lemonade
         cp lib/main.dart backup_lemonade/
         cp pubspec.yaml backup_lemonade/
         
-        # Apaga a pasta nativa quebrada e recria com a estrutura perfeita do zero
+        # Apaga a pasta nativa antiga
         rm -rf android
+        
+        # Cria o projeto de forma limpa
         flutter create . --org com.error404notafound --project-name lemonade
         
-        # Devolve o seu main.dart com as abas e o pubspec de volta para o projeto
+        # Restaura seus arquivos principais
         cp backup_lemonade/main.dart lib/
         cp backup_lemonade/pubspec.yaml ./
         
-        # Ativa suporte a sites antigos HTTP e AndroidX de forma automatica
+        # Ativa o AndroidX
         echo "android.useAndroidX=true" >> android/gradle.properties
         echo "android.enableJetifier=true" >> android/gradle.properties
-        sed -i '/application/a \        android:usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml
+
+    - name: Injetar Permissao de Sites Antigos de Forma Segura
+      run: |
+        # Substitui a tag application padrao incluindo o suporte a HTTP limpo sem quebrar o XML
+        cat << 'EOF' > android/app/src/main/AndroidManifest.xml
+        <manifest xmlns:android="http://android.com">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application
+                android:label="Lemonade"
+                android:name="${applicationName}"
+                android:icon="@mipmap/ic_launcher"
+                android:usesCleartextTraffic="true">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true"
+                    android:launchMode="singleTop"
+                    android:theme="@style/LaunchTheme"
+                    android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|density|uiMode"
+                    android:hardwareAccelerated="true"
+                    android:windowSoftInputMode="adjustResize">
+                    <meta-data
+                      android:name="io.flutter.embedding.android.NormalTheme"
+                      android:resource="@style/NormalTheme"
+                      />
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN"/>
+                        <category android:name="android.intent.category.LAUNCHER"/>
+                    </intent-filter>
+                </activity>
+                <meta-data
+                    android:name="flutterEmbedding"
+                    android:value="2" />
+            </application>
+        </manifest>
+        EOF
 
     - name: Baixar as dependencias do app
       run: flutter pub get
