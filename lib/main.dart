@@ -44,12 +44,14 @@ class TabModel {
   String title;
   bool isIncognito;
   bool showHomePage; 
+  InAppWebViewController? controller;
 
   TabModel({
     required this.url, 
     this.title = "Lemonade", 
     this.isIncognito = false,
     this.showHomePage = true,
+    this.controller,
   });
 }
 
@@ -96,34 +98,30 @@ class _BrowserScreenState extends State<BrowserScreen> {
     return url.startsWith("https://");
   }
 
-  // ESTA FUNÇÃO CRIA O SEU MOTOR DE BUSCA ESTILO DUCKDUKGO
+  // FUNÇÃO DO MOTOR DE BUSCA LEMONADE TOTALMENTE CORRIGIDA
   void _executarBuscaLemonade(String input) {
     String finalUrl = input.trim();
     if (finalUrl.isEmpty) return;
 
-    // Detecta se você digitou um site (ex: uol.com.br) ou uma pesquisa (ex: jogo de hoje)
     bool isUrl = finalUrl.startsWith("http://") ||
         finalUrl.startsWith("https://") ||
         (finalUrl.contains(".") && !finalUrl.contains(" "));
 
-    setState(() {
-      currentTab.showHomePage = false; 
-    });
-
     if (!isUrl) {
-      // Se for pesquisa, usa o servidor privado do Lemonade sem rastreamento do Google
+      // Motor de busca privado Lemonade via SearXNG
       finalUrl = "https://searxng.be{Uri.encodeComponent(finalUrl)}";
     } else if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
       finalUrl = "https://$finalUrl";
     }
 
-    // Abre o resultado da busca na tela
-    InAppWebViewController.create(
-      windowId: 0,
-      onWebViewCreated: (controller) {
-        controller.loadUrl(urlRequest: URLRequest(url: WebUri(finalUrl)));
-      }
-    );
+    setState(() {
+      currentTab.url = finalUrl;
+      currentTab.showHomePage = false; 
+      urlController.text = finalUrl;
+    });
+
+    // Envia a nova URL diretamente para o controlador da aba atual
+    currentTab.controller?.loadUrl(urlRequest: URLRequest(url: WebUri(finalUrl)));
   }
 
   @override
@@ -289,6 +287,9 @@ class _BrowserScreenState extends State<BrowserScreen> {
           // Tela que mostra as páginas da Web comuns
           return InAppWebView(
             initialUrlRequest: URLRequest(url: WebUri(tab.url)),
+            onWebViewCreated: (controller) {
+              tab.controller = controller;
+            },
             onLoadStart: (controller, url) {
               if (url != null) {
                 setState(() {
