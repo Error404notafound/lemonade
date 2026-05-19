@@ -16,7 +16,7 @@ void main() async {
       ),
     );
   } catch (e) {
-    // Evita crash caso o Firebase inicialize duas vezes durante hot reload
+    // Evita crash caso o Firebase inicialize duas vezes
   }
 
   InAppWebViewController.setWebContentsDebuggingEnabled(true);
@@ -43,9 +43,14 @@ class TabModel {
   String url;
   String title;
   bool isIncognito;
-  InAppWebViewController? controller;
+  bool showHomePage; 
 
-  TabModel({required this.url, this.title = "Nova Guia", this.isIncognito = false});
+  TabModel({
+    required this.url, 
+    this.title = "Lemonade", 
+    this.isIncognito = false,
+    this.showHomePage = true,
+  });
 }
 
 class BrowserScreen extends StatefulWidget {
@@ -56,17 +61,23 @@ class BrowserScreen extends StatefulWidget {
 }
 
 class _BrowserScreenState extends State<BrowserScreen> {
-  List<TabModel> tabs = [TabModel(url: "https://google.com")];
+  List<TabModel> tabs = [TabModel(url: "lemonade://home")];
   int currentTabIndex = 0;
   final TextEditingController urlController = TextEditingController();
 
   TabModel get currentTab => tabs[currentTabIndex];
 
+  @override
+  void initState() {
+    super.initState();
+    urlController.text = ""; 
+  }
+
   void _addNewTab({bool isIncognito = false}) {
     setState(() {
-      tabs.add(TabModel(url: "https://google.com", isIncognito: isIncognito));
+      tabs.add(TabModel(url: "lemonade://home", isIncognito: isIncognito));
       currentTabIndex = tabs.length - 1;
-      urlController.text = currentTab.url;
+      urlController.text = "";
     });
   }
 
@@ -77,113 +88,41 @@ class _BrowserScreenState extends State<BrowserScreen> {
       if (currentTabIndex >= tabs.length) {
         currentTabIndex = tabs.length - 1;
       }
-      urlController.text = currentTab.url;
+      urlController.text = currentTab.showHomePage ? "" : currentTab.url;
     });
-  }
-
-  void _injectDevTools() {
-    currentTab.controller?.evaluateJavascript(source: """
-      (function () {
-        if (window.eruda) return;
-        var src = '//cdn.jsdelivr.net/npm/eruda';
-        var script = document.createElement('script');
-        script.src = src;
-        document.body.appendChild(script);
-        script.onload = function () { eruda.init(); };
-      })();
-    """);
   }
 
   bool _isSiteSecure(String url) {
     return url.startsWith("https://");
   }
 
-  void _showKebabMenu() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xff252525),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (context) {
-        return SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Linha Superior de Ações Rápidas
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.refresh),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        currentTab.controller?.reload();
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.save_alt),
-                      tooltip: "Salvar Página",
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.code),
-                      tooltip: "DevTools",
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _injectDevTools();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: Colors.white24),
-              // Lista de Opções Principais
-              ListTile(
-                leading: const Icon(Icons.add),
-                title: const Text("Nova guia"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _addNewTab();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.visibility_off, color: Colors.purpleAccent),
-                title: const Text("Modo anônimo"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _addNewTab(isIncognito: true);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.group_work_outlined),
-                title: const Text("Incluir no novo grupo"),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: const Icon(Icons.download_outlined),
-                title: const Text("Downloads"),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: const Icon(Icons.star_border),
-                title: const Text("Favoritos"),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: const Icon(Icons.history),
-                title: const Text("Histórico"),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: const Icon(Icons.translate),
-                title: const Text("Tradutor"),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      },
+  // ESTA FUNÇÃO CRIA O SEU MOTOR DE BUSCA ESTILO DUCKDUKGO
+  void _executarBuscaLemonade(String input) {
+    String finalUrl = input.trim();
+    if (finalUrl.isEmpty) return;
+
+    // Detecta se você digitou um site (ex: uol.com.br) ou uma pesquisa (ex: jogo de hoje)
+    bool isUrl = finalUrl.startsWith("http://") ||
+        finalUrl.startsWith("https://") ||
+        (finalUrl.contains(".") && !finalUrl.contains(" "));
+
+    setState(() {
+      currentTab.showHomePage = false; 
+    });
+
+    if (!isUrl) {
+      // Se for pesquisa, usa o servidor privado do Lemonade sem rastreamento do Google
+      finalUrl = "https://searxng.be{Uri.encodeComponent(finalUrl)}";
+    } else if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
+      finalUrl = "https://$finalUrl";
+    }
+
+    // Abre o resultado da busca na tela
+    InAppWebViewController.create(
+      windowId: 0,
+      onWebViewCreated: (controller) {
+        controller.loadUrl(urlRequest: URLRequest(url: WebUri(finalUrl)));
+      }
     );
   }
 
@@ -194,7 +133,7 @@ class _BrowserScreenState extends State<BrowserScreen> {
         preferredSize: const Size.fromHeight(100.0),
         child: Column(
           children: [
-            // 1. Barra Estilo Desktop para Controle das Abas Múltiplas
+            // Gerenciador de Abas do Navegador
             SafeArea(
               child: Container(
                 height: 45,
@@ -211,39 +150,25 @@ class _BrowserScreenState extends State<BrowserScreen> {
                             onTap: () {
                               setState(() {
                                 currentTabIndex = index;
-                                urlController.text = currentTab.url;
+                                urlController.text = tabs[index].showHomePage ? "" : tabs[index].url;
                               });
                             },
                             child: Container(
                               margin: const EdgeInsets.only(left: 4, top: 6, right: 4),
                               padding: const EdgeInsets.symmetric(horizontal: 10),
                               decoration: BoxDecoration(
-                                color: isSelected 
-                                    ? (tabs[index].isIncognito ? const Color(0xff3a3a3a) : const Color(0xff1f1f1f))
-                                    : Colors.transparent,
+                                color: isSelected ? const Color(0xff1f1f1f) : Colors.transparent,
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                               ),
                               alignment: Alignment.center,
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    tabs[index].isIncognito ? Icons.visibility_off : Icons.public,
-                                    size: 14, 
-                                    color: tabs[index].isIncognito ? Colors.purpleAccent : Colors.white60
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Container(
-                                    constraints: const BoxConstraints(maxWidth: 80),
-                                    child: Text(
-                                      tabs[index].title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isSelected ? Colors.white : Colors.white60,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
-                                      ),
+                                  Text(
+                                    tabs[index].title.length > 12 ? "${tabs[index].title.substring(0, 12)}..." : tabs[index].title,
+                                    style: TextStyle(
+                                      color: isSelected ? const Color(0xffe2ff88) : Colors.white60,
+                                      fontSize: 12,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -258,80 +183,40 @@ class _BrowserScreenState extends State<BrowserScreen> {
                         },
                       ),
                     ),
-                    // Ícone outline de "+" para adicionar nova aba ao lado das existentes
                     IconButton(
-                      icon: const Icon(Icons.add_outlined, color: Colors.white70),
+                      icon: const Icon(Icons.add, color: Color(0xffe2ff88)),
                       onPressed: () => _addNewTab(),
                     ),
                   ],
                 ),
               ),
             ),
-            // 2. Barra de Endereços Principal e Controles Globais
+            // Barra de Endereço Superior
             Container(
               height: 55,
               color: const Color(0xff1f1f1f),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: Row(
                 children: [
-                  // Ícone outline de Casa (Resetar Página)
-                  IconButton(
-                    icon: const Icon(Icons.home_outlined),
-                    onPressed: () {
-                      final homeUri = WebUri("https://google.com");
-                      currentTab.controller?.loadUrl(urlRequest: URLRequest(url: homeUri));
-                    },
+                  Icon(
+                    currentTab.showHomePage ? Icons.search : (_isSiteSecure(urlController.text) ? Icons.lock : Icons.lock_open),
+                    color: currentTab.showHomePage ? Colors.white38 : (_isSiteSecure(urlController.text) ? Colors.green : Colors.orange),
+                    size: 18,
                   ),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Container(
-                      height: 38,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xff2d2d2d),
-                        borderRadius: BorderRadius.circular(20),
+                    child: TextField(
+                      controller: urlController,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      decoration: const InputDecoration(
+                        hintText: "Pesquise no Lemonade de forma privada...",
+                        hintStyle: TextStyle(color: Colors.white38),
+                        border: InputBorder.none,
                       ),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 10),
-                          // Cadeado indicador de segurança SSL
-                          Icon(
-                            _isSiteSecure(urlController.text) ? Icons.lock : Icons.lock_open,
-                            size: 16,
-                            color: _isSiteSecure(urlController.text) ? Colors.green : Colors.redAccent,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: urlController,
-                              style: const TextStyle(color: Colors.white, fontSize: 14),
-                              decoration: const InputDecoration(
-                                hintText: "Digite a URL ou pesquise...",
-                                border: InputBorder.none,
-                                isDense: true,
-                              ),
-                              onSubmitted: (value) {
-                                String trimmed = value.trim();
-                                if (trimmed.isEmpty) return;
-
-                                WebUri url;
-                                if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-                                  url = WebUri(trimmed);
-                                } else if (trimmed.contains(".") && !trimmed.contains(" ")) {
-                                  url = WebUri("https://$trimmed");
-                                } else {
-                                  url = WebUri("https://google.com{Uri.encodeComponent(trimmed)}");
-                                }
-                                currentTab.controller?.loadUrl(urlRequest: URLRequest(url: url));
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+                      onSubmitted: (value) {
+                        _executarBuscaLemonade(value);
+                      },
                     ),
-                  ),
-                  // Menu Kebab (Três Pontinhos)
-                  IconButton(
-                    icon: const Icon(Icons.more_vert),
-                    onPressed: _showKebabMenu,
                   ),
                 ],
               ),
@@ -339,40 +224,89 @@ class _BrowserScreenState extends State<BrowserScreen> {
           ],
         ),
       ),
-      // 3. Área de Renderização da Aba Ativa com IndexedStack para preservar estado
+      // TELA INICIAL DO MOTOR DE BUSCA LEMONADE
       body: IndexedStack(
         index: currentTabIndex,
         children: tabs.map((tab) {
+          if (tab.showHomePage) {
+            return Container(
+              color: const Color(0xff121212),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Ícone Verde Limão Neon
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xffe2ff88), width: 3),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.waves, color: Color(0xffe2ff88), size: 45), 
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "lemonade",
+                        style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xffe2ff88)),
+                      ),
+                      const Text(
+                        "Busca privada. Sem rastreamento.",
+                        style: TextStyle(fontSize: 14, color: Colors.white38),
+                      ),
+                      const SizedBox(height: 32),
+                      // Barra de Pesquisa Central da Home
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xff1f1f1f),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: TextField(
+                            style: const TextStyle(color: Colors.white),
+                            decoration: const InputDecoration(
+                              hintText: "Pesquise algo...",
+                              hintStyle: TextStyle(color: Colors.white38),
+                              border: InputBorder.none,
+                              icon: Icon(Icons.search, color: Color(0xffe2ff88)),
+                            ),
+                            onSubmitted: (value) {
+                              _executarBuscaLemonade(value);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Tela que mostra as páginas da Web comuns
           return InAppWebView(
             initialUrlRequest: URLRequest(url: WebUri(tab.url)),
-            onWebViewCreated: (controller) {
-              tab.controller = controller;
-            },
-            initialSettings: InAppWebViewSettings(
-              allowUniversalAccessFromFileURLs: true,
-              allowFileAccessFromFileURLs: true,
-              mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
-              javaScriptEnabled: true,
-              domStorageEnabled: true,
-              // Força o User Agent para Versão Desktop se desejado globalmente
-              preferredContentMode: UserPreferredContentMode.RECOMMENDED,
-              // Configuração para isolamento total do Modo Anônimo
-              incognito: tab.isIncognito,
-            ),
-            onReceivedServerTrustAuthRequest: (controller, challenge) async {
-              return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
-            },
-            onTitleChanged: (controller, title) {
-              if (title != null) {
-                setState(() => tab.title = title);
-              }
-            },
-            onLoadStop: (controller, url) {
+            onLoadStart: (controller, url) {
               if (url != null) {
                 setState(() {
                   tab.url = url.toString();
                   if (tabs[currentTabIndex] == tab) {
-                    urlController.text = url.toString();
+                    urlController.text = tab.url;
+                  }
+                });
+              }
+            },
+            onLoadStop: (controller, url) async {
+              if (url != null) {
+                String? title = await controller.getTitle();
+                setState(() {
+                  tab.url = url.toString();
+                  tab.title = title ?? "Lemonade";
+                  if (tabs[currentTabIndex] == tab) {
+                    urlController.text = tab.url;
                   }
                 });
               }
