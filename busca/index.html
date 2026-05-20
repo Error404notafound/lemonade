@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemonade - Buscador Privado</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="search-wrapper">
+        <div class="logo">🍋 Lemonade</div>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Pesquise de forma privada...">
+            <button id="search-btn">Buscar</button>
+        </div>
+        <p class="privacy-badge">🔒 Nós não rastreamos você.</p>
+    </div>
+    <div id="results-container"></div>
+
+    <!-- Conexão com o Firebase -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
